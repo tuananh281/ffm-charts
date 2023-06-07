@@ -1,0 +1,40 @@
+#nodeSelector:
+#  node-type: ffm-app
+
+#tolerations:
+#- key: "app"
+#  operator: "Equal"
+#  value: "ffm-api"
+#  effect: "NoSchedule"
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: 'true'
+  vault.hashicorp.com/role: 'fulfillment-staging'
+  vault.hashicorp.com/auth-path: auth/ffm-staging
+  vault.hashicorp.com/agent-pre-populate-only: 'true'
+  vault.hashicorp.com/agent-inject-secret-config-staging.yml: 'secret/fulfillment/staging/ffm-auth'
+  vault.hashicorp.com/agent-inject-template-config-staging.yml: |
+    {{ with secret "secret/fulfillment/staging/ffm-auth" }}
+    {{ .Data.data | toYAML }}
+    {{ end }}
+  vault.hashicorp.com/agent-inject-secret-env-staging.env: 'secret/fulfillment/staging/ffm-auth-env'
+  vault.hashicorp.com/agent-inject-template-env-staging.env: |
+    {{ with secret "secret/fulfillment/staging/ffm-auth-env" }}
+    {{- range $k, $v := .Data.data }}
+    export {{ $k }}={{ $v }}
+    {{ end }}
+    {{ end }}
+
+serviceAccount:
+  name: ffm-vault-auth-staging
+
+imagePullSecrets:
+  - name: harbor-registry-ffm-staging
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 100Mi

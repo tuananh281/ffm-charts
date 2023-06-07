@@ -1,0 +1,39 @@
+#nodeSelector:
+#  node-type: ffm-app
+
+#tolerations:
+#- key: "app"
+#  operator: "Equal"
+#  value: "ffm-api"
+#  effect: "NoSchedule"
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: 'true'
+  vault.hashicorp.com/role: 'fulfillment-qc'
+  vault.hashicorp.com/agent-pre-populate-only: 'true'
+  vault.hashicorp.com/agent-inject-secret-config-qc.yml: 'secret/fulfillment/qc/ffm-auth'
+  vault.hashicorp.com/agent-inject-template-config-qc.yml: |
+    {{ with secret "secret/fulfillment/qc/ffm-auth" }}
+    {{ .Data.data | toYAML }}
+    {{ end }}
+  vault.hashicorp.com/agent-inject-secret-env-qc.env: 'secret/fulfillment/qc/ffm-auth-env'
+  vault.hashicorp.com/agent-inject-template-env-qc.env: |
+    {{ with secret "secret/fulfillment/qc/ffm-auth-env" }}
+    {{- range $k, $v := .Data.data }}
+    export {{ $k }}={{ $v }}
+    {{ end }}
+    {{ end }}
+
+serviceAccount:
+  name: ffm-vault-auth-qc
+
+imagePullSecrets:
+  - name: harbor-registry-ffm-qc
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 100Mi
